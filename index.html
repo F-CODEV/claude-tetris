@@ -13,6 +13,21 @@
 
   <div class="wrapper">
     <div class="game-container">
+      <aside class="panel panel-left hidden" id="abilities-panel">
+        <div class="panel-section">
+          <span class="label">ENERGÍA <kbd>E</kbd></span>
+          <div class="energy-bar" id="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
+        </div>
+        <div class="panel-section">
+          <span class="label">HOLD</span>
+          <canvas id="hold-canvas" width="80" height="80"></canvas>
+        </div>
+        <div class="panel-section hidden" id="preview-section">
+          <span class="label">PRÓXIMAS</span>
+          <canvas id="preview-canvas" width="160" height="32"></canvas>
+        </div>
+      </aside>
+
       <canvas id="board" width="300" height="600"></canvas>
 
       <aside class="panel">
@@ -49,6 +64,7 @@
             <li><kbd>↑</kbd> rotar</li>
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
+            <li><kbd>E</kbd> habilidad</li>
             <li><kbd>P</kbd> pausa</li>
             <li><kbd>M</kbd> sonido</li>
           </ul>
@@ -61,6 +77,7 @@
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
         <div id="mode-list" class="mode-list hidden"></div>
+        <div id="ability-list" class="mode-list hidden"></div>
         <div id="overlay-actions" class="overlay-actions hidden">
           <button id="restart-btn">Reiniciar</button>
           <button id="menu-btn" class="secondary-btn" type="button">Menú</button>

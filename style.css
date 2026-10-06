@@ -307,6 +307,54 @@ kbd {
   color: var(--accent);
 }
 
+/* ---- Habilidades ---- */
+.panel-left {
+  align-items: stretch;
+}
+
+#hold-canvas,
+#preview-canvas {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--canvas-bg);
+  border-radius: 4px;
+}
+
+.energy-bar {
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--canvas-bg);
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s;
+}
+
+.energy-bar.ready {
+  border-color: var(--accent);
+  animation: energy-glow 1s ease-in-out infinite;
+}
+
+@keyframes energy-glow {
+  0%, 100% { box-shadow: 0 0 2px var(--accent); }
+  50% { box-shadow: 0 0 12px var(--accent); }
+}
+
+.mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mode-btn:disabled:hover {
+  border-color: var(--border);
+  background: transparent;
+}
+
 /* siempre al final: gana a los display de las reglas anteriores */
 .hidden {
   display: none;

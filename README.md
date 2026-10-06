@@ -48,6 +48,12 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
   - **Bloques fijos**: elimina todas las piedras pre-colocadas en las 8 filas inferiores.
   - **Invisible**: las piezas se vuelven invisibles al tocar suelo; limpia 20 líneas.
   - **Rotación inversa**: desde el nivel 3 la rotación gira al revés; llega al nivel 5.
+- **Habilidades cargables** (modo Clásico): una barra de **energía** se llena al limpiar líneas (20 por línea). Con la barra llena, `E` abre un menú (teclas `1`–`5`, `Esc` cancela) y la barra vuelve a 0 al elegir:
+  - **Ver 5 siguientes**: muestra las próximas 5 piezas mientras se consumen.
+  - **Intercambiar pieza**: cambia la actual por una de 3 opciones.
+  - **Ralentizar 10 s**: la caída va 3× más lenta.
+  - **Deshacer colocación**: devuelve la última pieza fijada y restaura tablero y puntuación.
+  - **Reservar pieza** (hold): guarda la actual o la intercambia con la reservada.
 - **Combos y bonus**: limpiar líneas en piezas consecutivas multiplica la puntuación (x2, x3… hasta x10; se reinicia con una pieza sin líneas). **T-spin** (rotar una T en un hueco con 3 esquinas ocupadas: 400 / 800 / 1200 / 1600 × nivel), **B2B** (Tetris o T-spin seguido de otro: ×1,5) y **Perfect Clear** (dejar el tablero vacío: hasta 2000 × nivel). Con popups en pantalla, casilla `COMBO` y efectos de sonido (Web Audio).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
@@ -93,6 +99,7 @@ Después abre `http://localhost:8000` en el navegador.
 | `↑` o `X` | Rotar la pieza en sentido horario |
 | `↓`       | Soft drop (bajar más rápido)      |
 | `Espacio` | Hard drop (caída instantánea)     |
+| `E`       | Menú de habilidades (barra llena) |
 | `P`       | Pausar / reanudar                 |
 | `M`       | Silenciar / activar sonido        |
 
@@ -136,7 +143,7 @@ Contiene toda la lógica del juego. A grandes rasgos:
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
-  ├─ spawn()                        → mueve next a current y genera nueva next
+  ├─ spawn()                        → toma current de la cola de piezas
   └─ requestAnimationFrame(loop)
         ↓
    loop(timestamp)
