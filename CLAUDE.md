@@ -26,7 +26,8 @@ Game flow in `game.js`:
 - Locking chain: `lockPiece()` → `merge()` → `clearLines()` → `spawn()`. `spawn()` promotes `next`, makes a new `next`, and calls `endGame()` if the new piece collides.
 - `clearLines()` owns scoring and leveling: `LINE_SCORES[cleared] * level`, level = `floor(lines/10)+1`, `dropInterval = max(100, 1000 - (level-1)*90)`.
 - Soft drop gives +1 per cell, hard drop +2 per cell (in `softDrop()` / `hardDrop()`). Hard drop uses `ghostY()`.
-- Board cells and piece shapes store a color index (1–7) that maps to `COLORS` and `PIECES`. 0 means empty. Keep the three arrays aligned when adding pieces (and update `randomPiece()`, which hardcodes 7).
+- Board cells and piece shapes store a color index (1–12) that maps to `COLORS` and `PIECES`. 0 means empty. Keep the arrays aligned when adding pieces. Indices 1–7 are the standard pieces (`STANDARD_COUNT`), 8–10 pentominoes (`PENTOMINOES`), 11 single (`SINGLE`), 12 hollow 3×3 (`HOLLOW`).
+- `makePiece(type)` builds a piece; `randomPiece()` rolls `HOLLOW_CHANCE` / `PENTOMINO_CHANCE` before falling back to a standard piece. A 4-line clear sets `rewardPending`, and the next `spawn()` queues a `SINGLE` as `next` (reset in `init()`).
 - `collide(shape, ox, oy)` is the single collision check (walls, floor, board). Rows with `ny < 0` are allowed. Rotation (`tryRotate()`) is clockwise only, with horizontal kicks `[0,-1,1,-2,2]` and no vertical kick.
 - Pause: `togglePause()` cancels the animation frame and reuses the game-over overlay. Resuming resets `lastTime` to avoid a large `dt`.
 - Theme: dark by default; colors are CSS variables in `style.css` (`:root` dark, `[data-theme="light"]`). `applyTheme()` sets `data-theme`, caches the `--grid` color in `gridColor` (used by `drawGrid()`), and redraws `draw()`/`drawNext()` since paused/game-over states have no loop. The choice persists in `localStorage` key `tetris-theme`.
