@@ -229,3 +229,231 @@ kbd {
 #restart-btn:hover {
   background: var(--accent-hover);
 }
+
+/* ---- Objetivo del desafío ---- */
+.goal {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Menú de modos ---- */
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 250px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mode-btn:hover,
+.mode-btn:focus-visible {
+  border-color: var(--accent);
+  background: var(--overlay-bg);
+}
+
+.mode-btn strong {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.mode-btn span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.secondary-btn {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.secondary-btn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+#overlay-title.win {
+  color: var(--accent);
+}
+
+/* ---- Habilidades ---- */
+.panel-left {
+  align-items: stretch;
+}
+
+#hold-canvas,
+#preview-canvas {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--canvas-bg);
+  border-radius: 4px;
+}
+
+#hold-canvas {
+  transition: opacity 0.15s;
+}
+
+/* hold ya usado en este turno */
+#hold-canvas.locked {
+  opacity: 0.35;
+}
+
+.energy-bar {
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--canvas-bg);
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s;
+}
+
+.energy-bar.ready {
+  border-color: var(--accent);
+  animation: energy-glow 1s ease-in-out infinite;
+}
+
+@keyframes energy-glow {
+  0%, 100% { box-shadow: 0 0 2px var(--accent); }
+  50% { box-shadow: 0 0 12px var(--accent); }
+}
+
+.mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mode-btn:disabled:hover {
+  border-color: var(--border);
+  background: transparent;
+}
+
+/* ---- Records ---- */
+.overlay-box {
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 250px;
+  align-items: stretch;
+}
+
+.records-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  text-align: left;
+}
+
+.records-list li {
+  display: flex;
+  gap: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.records-list li.empty {
+  color: var(--muted);
+  justify-content: center;
+}
+
+.records-list li.new {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.rec-rank { width: 22px; flex: none; }
+.rec-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-score { flex: none; }
+
+.records-stats {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.name-entry {
+  display: flex;
+  gap: 6px;
+}
+
+.name-entry input {
+  flex: 1;
+  min-width: 0;
+  background: var(--canvas-bg);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.name-entry .secondary-btn {
+  margin-top: 0;
+  padding: 6px 12px;
+}
+
+.link-btn {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--danger);
+}
+
+/* siempre al final: gana a los display de las reglas anteriores */
+.hidden {
+  display: none;
+}
