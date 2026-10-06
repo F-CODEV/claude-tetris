@@ -229,3 +229,211 @@ kbd {
 #restart-btn:hover {
   background: var(--accent-hover);
 }
+
+/* ---- Objetivo del desafío ---- */
+.goal {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Menú de modos ---- */
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 250px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mode-btn:hover,
+.mode-btn:focus-visible {
+  border-color: var(--accent);
+  background: var(--overlay-bg);
+}
+
+.mode-btn strong {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.mode-btn span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.secondary-btn {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.secondary-btn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+#overlay-title.win {
+  color: var(--accent);
+}
+
+/* ---- Habilidades ---- */
+.panel-left {
+  align-items: stretch;
+}
+
+#hold-canvas,
+#preview-canvas {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--canvas-bg);
+  border-radius: 4px;
+}
+
+#hold-canvas {
+  transition: opacity 0.15s;
+}
+
+/* hold ya usado en este turno */
+#hold-canvas.locked {
+  opacity: 0.35;
+}
+
+.energy-bar {
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--canvas-bg);
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s;
+}
+
+.energy-bar.ready {
+  border-color: var(--accent);
+  animation: energy-glow 1s ease-in-out infinite;
+}
+
+@keyframes energy-glow {
+  0%, 100% { box-shadow: 0 0 2px var(--accent); }
+  50% { box-shadow: 0 0 12px var(--accent); }
+}
+
+.mode-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mode-btn:disabled:hover {
+  border-color: var(--border);
+  background: transparent;
+}
+
+/* ---- Menú de pausa ---- */
+#pause-menu .mode-btn {
+  text-align: center;
+}
+
+.level-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.level-picker small {
+  font-size: 10px;
+}
+
+.level-stepper {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stepper-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.stepper-btn:hover:not(:disabled),
+.stepper-btn:focus-visible {
+  border-color: var(--accent);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pause-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.pause-controls ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+/* siempre al final: gana a los display de las reglas anteriores */
+.hidden {
+  display: none;
+}

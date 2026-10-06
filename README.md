@@ -35,13 +35,28 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 
 - Tablero de **10 × 20** celdas.
 - Las **7 piezas estándar** (I, O, T, S, Z, J, L) con colores diferenciados.
+- **Piezas especiales** que aparecen ocasionalmente: pentominós **+**, **U** e **Y** (~10 %), una **3×3 hueca** como reto (~3 %) y una pieza **1×1** dorada como recompensa tras hacer un Tetris (4 líneas a la vez).
+- **Power-ups**: cada 5 líneas la siguiente pieza es un bloque 1×1 con un efecto aleatorio que se dispara al aterrizar: 💣 **Bomba** (destruye un área 3×3), ⚡ **Rayo** (limpia la fila y la columna), 🎨 **Tinte** (elimina todos los bloques del color sobre el que cae), ⬇ **Gravedad** (compacta los huecos) y ❄ **Congelar** (pausa la caída 5 s).
 - **Rotación** con _wall kicks_ básicos (pequeños desplazamientos para que la pieza pueda rotar pegada a la pared).
 - **Soft drop** (bajada acelerada) y **hard drop** (caída instantánea).
 - **Pieza fantasma** (_ghost piece_): muestra dónde aterrizará la pieza actual.
 - **Vista previa** de la siguiente pieza.
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
+- **Modos de juego**: al abrir la página (y con el botón **Menú**) eliges entre **Clásico** y 5 desafíos con objetivo, que usan solo las 7 piezas estándar:
+  - **Sprint 40**: limpia 40 líneas en 2 minutos.
+  - **Marea de basura**: sobrevive 2 minutos mientras sube una fila de basura cada 10 s.
+  - **Bloques fijos**: elimina todas las piedras pre-colocadas en las 8 filas inferiores.
+  - **Invisible**: las piezas se vuelven invisibles al tocar suelo; limpia 20 líneas.
+  - **Rotación inversa**: desde el nivel 3 la rotación gira al revés; llega al nivel 5.
+- **Hold**: `C` o `Shift` guarda la pieza actual en el slot **HOLD**; si ya hay una guardada, se intercambia. Solo se puede usar una vez por pieza (el slot se atenúa hasta que la pieza se asienta). Disponible en todos los modos.
+- **Habilidades cargables** (modo Clásico): una barra de **energía** se llena al limpiar líneas (20 por línea). Con la barra llena, `E` abre un menú (teclas `1`–`4`, `Esc` cancela) y la barra vuelve a 0 al elegir:
+  - **Ver 5 siguientes**: muestra las próximas 5 piezas mientras se consumen.
+  - **Intercambiar pieza**: cambia la actual por una de 3 opciones.
+  - **Ralentizar 10 s**: la caída va 3× más lenta.
+  - **Deshacer colocación**: devuelve la última pieza fijada y restaura tablero y puntuación.
+- **Combos y bonus**: limpiar líneas en piezas consecutivas multiplica la puntuación (x2, x3… hasta x10; se reinicia con una pieza sin líneas). **T-spin** (rotar una T en un hueco con 3 esquinas ocupadas: 400 / 800 / 1200 / 1600 × nivel), **B2B** (Tetris o T-spin seguido de otro: ×1,5) y **Perfect Clear** (dejar el tablero vacío: hasta 2000 × nivel). Con popups en pantalla, casilla `COMBO` y efectos de sonido (Web Audio).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
-- **Pausa** y **Game Over** con opción de reinicio.
+- **Menú de pausa** (`P` o `Esc`): Reanudar, Reiniciar, Ver controles y **Nivel inicial** (1–10, solo Clásico, se aplica en la próxima partida y se guarda en `localStorage`). Mientras está abierto no se procesan las teclas del juego. **Game Over** con opción de reinicio.
 
 ---
 
@@ -84,7 +99,10 @@ Después abre `http://localhost:8000` en el navegador.
 | `↑` o `X` | Rotar la pieza en sentido horario |
 | `↓`       | Soft drop (bajar más rápido)      |
 | `Espacio` | Hard drop (caída instantánea)     |
-| `P`       | Pausar / reanudar                 |
+| `C` / `Shift` | Reservar pieza (hold)         |
+| `E`       | Menú de habilidades (barra llena) |
+| `P` / `Esc` | Pausar / reanudar (menú de pausa) |
+| `M`       | Silenciar / activar sonido        |
 
 El botón circular de la esquina superior derecha alterna entre tema **oscuro** (por defecto) y **claro**. La elección se guarda en `localStorage` y se recuerda entre sesiones.
 
@@ -110,7 +128,7 @@ Aporta el aspecto visual con estética _dark / retro arcade_ (más un tema claro
 
 Contiene toda la lógica del juego. A grandes rasgos:
 
-- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–7) que identifica la pieza.
+- **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–17) que identifica la pieza.
 - **Piezas**: definidas como matrices cuadradas. Para rotar se calcula la transposición + reverso de filas (`rotateCW`).
 - **Detección de colisiones** (`collide`): comprueba que ninguna celda de la pieza salga del tablero ni se solape con bloques ya fijados.
 - **Wall kicks** (`tryRotate`): si la rotación choca, intenta desplazar la pieza ±1 y ±2 columnas antes de descartar el giro.
@@ -126,7 +144,7 @@ Contiene toda la lógica del juego. A grandes rasgos:
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
-  ├─ spawn()                        → mueve next a current y genera nueva next
+  ├─ spawn()                        → toma current de la cola de piezas
   └─ requestAnimationFrame(loop)
         ↓
    loop(timestamp)

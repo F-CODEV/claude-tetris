@@ -13,6 +13,21 @@
 
   <div class="wrapper">
     <div class="game-container">
+      <aside class="panel panel-left" id="abilities-panel">
+        <div class="panel-section hidden" id="energy-section">
+          <span class="label">ENERGÍA <kbd>E</kbd></span>
+          <div class="energy-bar" id="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
+        </div>
+        <div class="panel-section">
+          <span class="label">HOLD <kbd>C</kbd></span>
+          <canvas id="hold-canvas" width="80" height="80"></canvas>
+        </div>
+        <div class="panel-section hidden" id="preview-section">
+          <span class="label">PRÓXIMAS</span>
+          <canvas id="preview-canvas" width="160" height="32"></canvas>
+        </div>
+      </aside>
+
       <canvas id="board" width="300" height="600"></canvas>
 
       <aside class="panel">
@@ -28,6 +43,14 @@
           <span class="label">LEVEL</span>
           <span class="value" id="level">1</span>
         </div>
+        <div class="panel-section">
+          <span class="label">COMBO</span>
+          <span class="value" id="combo">—</span>
+        </div>
+        <div class="panel-section hidden" id="goal-section">
+          <span class="label">OBJETIVO</span>
+          <span class="goal" id="goal"></span>
+        </div>
 
         <div class="panel-section">
           <span class="label">NEXT</span>
@@ -41,7 +64,10 @@
             <li><kbd>↑</kbd> rotar</li>
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
-            <li><kbd>P</kbd> pausa</li>
+            <li><kbd>C</kbd> / <kbd>Shift</kbd> reservar</li>
+            <li><kbd>E</kbd> habilidad</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            <li><kbd>M</kbd> sonido</li>
           </ul>
         </div>
       </aside>
@@ -51,7 +77,38 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
-        <button id="restart-btn">Reiniciar</button>
+        <div id="mode-list" class="mode-list hidden"></div>
+        <div id="ability-list" class="mode-list hidden"></div>
+        <div id="pause-menu" class="mode-list hidden">
+          <button id="resume-btn" class="mode-btn" type="button"><strong>Reanudar</strong></button>
+          <button id="pause-restart-btn" class="mode-btn" type="button"><strong>Reiniciar</strong></button>
+          <button id="controls-btn" class="mode-btn" type="button"><strong>Ver controles</strong></button>
+          <div id="level-picker" class="level-picker">
+            <span class="level-picker-label">Nivel inicial <small>(próxima partida)</small></span>
+            <div class="level-stepper">
+              <button id="start-level-down" class="stepper-btn" type="button" aria-label="Bajar nivel inicial">−</button>
+              <span id="start-level" aria-live="polite">1</span>
+              <button id="start-level-up" class="stepper-btn" type="button" aria-label="Subir nivel inicial">+</button>
+            </div>
+          </div>
+        </div>
+        <div id="pause-controls" class="pause-controls hidden">
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd> / <kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>C</kbd> / <kbd>Shift</kbd> reservar</li>
+            <li><kbd>E</kbd> habilidad</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            <li><kbd>M</kbd> sonido</li>
+          </ul>
+          <button id="controls-back-btn" class="secondary-btn" type="button">Volver</button>
+        </div>
+        <div id="overlay-actions" class="overlay-actions hidden">
+          <button id="restart-btn">Reiniciar</button>
+          <button id="menu-btn" class="secondary-btn" type="button">Menú</button>
+        </div>
       </div>
     </div>
   </div>
