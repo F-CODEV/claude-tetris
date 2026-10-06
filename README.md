@@ -88,6 +88,8 @@ Después abre `http://localhost:8000` en el navegador.
 
 El botón circular de la esquina superior derecha alterna entre tema **oscuro** (por defecto) y **claro**. La elección se guarda en `localStorage` y se recuerda entre sesiones.
 
+El botón con el nombre de la skin (junto al de tema) cicla entre cuatro aspectos visuales: **Retro** (bloques planos, por defecto), **Neón** (fondo negro y brillo con `shadowBlur`), **Pastel** (colores suaves con esquinas redondeadas) y **Pixel** (textura de píxeles sobre cada bloque). El cambio es inmediato, sin recargar, y se guarda en `localStorage` (`tetris-skin`).
+
 ---
 
 ## Cómo funciona
