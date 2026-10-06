@@ -213,6 +213,10 @@ const SKINS = {
       roundedRectPath(context, px + 1.5, py + 1.5, size - 3, size - 3, size * 0.28);
       context.fillStyle = color;
       context.fill();
+      context.strokeStyle = 'rgba(80,60,110,0.35)';
+      context.lineWidth = 1;
+      roundedRectPath(context, px + 1.5, py + 1.5, size - 3, size - 3, size * 0.28);
+      context.stroke();
       context.fillStyle = 'rgba(255,255,255,0.35)';
       roundedRectPath(context, px + 5, py + 4, size - 10, size * 0.18, size * 0.09);
       context.fill();
@@ -251,7 +255,7 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   const skin = SKINS[skinId];
   context.save();
   context.globalAlpha = alpha ?? 1;
-  skin.drawCell(context, x * size, y * size, size, skin.colors[colorIndex], alpha ?? 1);
+  skin.drawCell(context, x * size, y * size, size, skin.colors[colorIndex] || COLORS[colorIndex], alpha ?? 1);
   context.restore();
 }
 
