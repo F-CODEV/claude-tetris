@@ -56,7 +56,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
   - **Deshacer colocación**: devuelve la última pieza fijada y restaura tablero y puntuación.
 - **Combos y bonus**: limpiar líneas en piezas consecutivas multiplica la puntuación (x2, x3… hasta x10; se reinicia con una pieza sin líneas). **T-spin** (rotar una T en un hueco con 3 esquinas ocupadas: 400 / 800 / 1200 / 1600 × nivel), **B2B** (Tetris o T-spin seguido de otro: ×1,5) y **Perfect Clear** (dejar el tablero vacío: hasta 2000 × nivel). Con popups en pantalla, casilla `COMBO` y efectos de sonido (Web Audio).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
-- **Pausa** y **Game Over** con opción de reinicio.
+- **Menú de pausa** (`P` o `Esc`): Reanudar, Reiniciar, Ver controles y **Nivel inicial** (1–10, solo Clásico, se aplica en la próxima partida y se guarda en `localStorage`). Mientras está abierto no se procesan las teclas del juego. **Game Over** con opción de reinicio.
 
 ---
 
@@ -101,7 +101,7 @@ Después abre `http://localhost:8000` en el navegador.
 | `Espacio` | Hard drop (caída instantánea)     |
 | `C` / `Shift` | Reservar pieza (hold)         |
 | `E`       | Menú de habilidades (barra llena) |
-| `P`       | Pausar / reanudar                 |
+| `P` / `Esc` | Pausar / reanudar (menú de pausa) |
 | `M`       | Silenciar / activar sonido        |
 
 El botón circular de la esquina superior derecha alterna entre tema **oscuro** (por defecto) y **claro**. La elección se guarda en `localStorage` y se recuerda entre sesiones.

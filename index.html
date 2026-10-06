@@ -66,7 +66,7 @@
             <li><kbd>Space</kbd> caída</li>
             <li><kbd>C</kbd> / <kbd>Shift</kbd> reservar</li>
             <li><kbd>E</kbd> habilidad</li>
-            <li><kbd>P</kbd> pausa</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
             <li><kbd>M</kbd> sonido</li>
           </ul>
         </div>
@@ -79,6 +79,32 @@
         <p id="overlay-score"></p>
         <div id="mode-list" class="mode-list hidden"></div>
         <div id="ability-list" class="mode-list hidden"></div>
+        <div id="pause-menu" class="mode-list hidden">
+          <button id="resume-btn" class="mode-btn" type="button"><strong>Reanudar</strong></button>
+          <button id="pause-restart-btn" class="mode-btn" type="button"><strong>Reiniciar</strong></button>
+          <button id="controls-btn" class="mode-btn" type="button"><strong>Ver controles</strong></button>
+          <div id="level-picker" class="level-picker">
+            <span class="level-picker-label">Nivel inicial <small>(próxima partida)</small></span>
+            <div class="level-stepper">
+              <button id="start-level-down" class="stepper-btn" type="button" aria-label="Bajar nivel inicial">−</button>
+              <span id="start-level" aria-live="polite">1</span>
+              <button id="start-level-up" class="stepper-btn" type="button" aria-label="Subir nivel inicial">+</button>
+            </div>
+          </div>
+        </div>
+        <div id="pause-controls" class="pause-controls hidden">
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd> / <kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>C</kbd> / <kbd>Shift</kbd> reservar</li>
+            <li><kbd>E</kbd> habilidad</li>
+            <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            <li><kbd>M</kbd> sonido</li>
+          </ul>
+          <button id="controls-back-btn" class="secondary-btn" type="button">Volver</button>
+        </div>
         <div id="overlay-actions" class="overlay-actions hidden">
           <button id="restart-btn">Reiniciar</button>
           <button id="menu-btn" class="secondary-btn" type="button">Menú</button>

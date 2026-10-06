@@ -72,6 +72,8 @@ const B2B_MULT = 1.5;
 const COMBO_MAX = 10;
 const POPUP_MS = 1200;
 const MUTE_KEY = 'tetris-muted';
+const START_LEVEL_KEY = 'tetris-start-level';
+const START_LEVEL_MAX = 10;
 
 const GARBAGE = 18, STONE = 19;
 const SPRINT_LINES = 40;
@@ -120,11 +122,23 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const pauseMenu = document.getElementById('pause-menu');
+const pauseControls = document.getElementById('pause-controls');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const controlsBtn = document.getElementById('controls-btn');
+const controlsBackBtn = document.getElementById('controls-back-btn');
+const levelDownBtn = document.getElementById('start-level-down');
+const levelUpBtn = document.getElementById('start-level-up');
+const levelPicker = document.getElementById('level-picker');
+const startLevelEl = document.getElementById('start-level');
 const themeToggle = document.getElementById('theme-toggle');
 
 const THEME_KEY = 'tetris-theme';
 let gridColor;
 
+let gameBaseLevel = 1; // nivel base de la partida en curso (fijado en init)
+let startLevel = 1; // nivel inicial elegido en el menú de pausa (solo Clásico)
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, rewardPending;
 let linesSincePower, powerPending, freezeLeft, flashCells, flashLeft;
 let combo, b2bActive, lastMoveRotate, popups = [];
@@ -614,10 +628,10 @@ function clearLines(tspin = false) {
     addEnergy(cleared);
     lines += cleared;
     const prevLevel = level;
-    level = Math.floor(lines / 10) + 1;
+    level = calcLevel();
     if (mode === 'reverse' && prevLevel < REVERSE_FROM_LEVEL && level >= REVERSE_FROM_LEVEL)
       addPopup('¡ROTACIÓN INVERSA!', '#ef5350');
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    dropInterval = calcDropInterval(level);
     updateHUD();
   } else {
     scoreTurn(0, tspin);
@@ -904,14 +918,18 @@ function drawPanels() {
   drawPreview();
 }
 
-// menu: lista de modos; abilities: opciones de habilidad; si no, Reiniciar / Menú.
-function showOverlay(title, scoreText, { menu = false, win = false, abilities = false } = {}) {
+// menu: lista de modos; abilities: opciones de habilidad; pause: menú de pausa;
+// si no, Reiniciar / Menú.
+function showOverlay(title, scoreText, { menu = false, win = false, abilities = false, pause = false } = {}) {
   overlayTitle.textContent = title;
   overlayTitle.classList.toggle('win', win);
   overlayScore.textContent = scoreText;
   modeList.classList.toggle('hidden', !menu);
   abilityList.classList.toggle('hidden', !abilities);
-  overlayActions.classList.toggle('hidden', menu || abilities);
+  overlayActions.classList.toggle('hidden', menu || abilities || pause);
+  pauseMenu.classList.toggle('hidden', !pause);
+  pauseControls.classList.add('hidden');
+  levelPicker.classList.toggle('hidden', !extrasOn());
   overlay.classList.remove('hidden');
 }
 
@@ -960,12 +978,34 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    dropAccum = 0; // evita una caída inmediata al volver
     resume();
   } else {
     cancelAnimationFrame(animId);
-    showOverlay('PAUSA', '');
+    showOverlay('PAUSA', '', { pause: true });
   }
 }
+
+function loadStartLevel() {
+  try {
+    const n = parseInt(localStorage.getItem(START_LEVEL_KEY), 10);
+    return n >= 1 && n <= START_LEVEL_MAX ? n : 1;
+  } catch (e) {
+    return 1;
+  }
+}
+
+function setStartLevel(n) {
+  startLevel = Math.min(START_LEVEL_MAX, Math.max(1, n));
+  startLevelEl.textContent = startLevel;
+  levelDownBtn.disabled = startLevel <= 1;
+  levelUpBtn.disabled = startLevel >= START_LEVEL_MAX;
+  try { localStorage.setItem(START_LEVEL_KEY, String(startLevel)); } catch (e) { /* almacenamiento no disponible */ }
+}
+
+// Nivel de la partida: nunca baja del nivel base fijado en init().
+const calcLevel = () => Math.max(gameBaseLevel, Math.floor(lines / 10) + 1);
+const calcDropInterval = lv => Math.max(100, 1000 - (lv - 1) * 90);
 
 function loop(ts) {
   const dt = ts - lastTime;
@@ -1004,10 +1044,11 @@ function init(modeId = mode) {
   goalSection.classList.toggle('hidden', mode === 'classic');
   score = 0;
   lines = 0;
-  level = 1;
+  gameBaseLevel = extrasOn() ? startLevel : 1;
+  level = gameBaseLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = calcDropInterval(level);
   dropAccum = 0;
   rewardPending = false;
   linesSincePower = 0;
@@ -1043,7 +1084,11 @@ document.addEventListener('keydown', e => {
   initAudio(); // el navegador exige un gesto del usuario para crear el AudioContext
   if (e.code === 'KeyM') { toggleMute(); return; }
   if (abilityOptions) { handleAbilityKey(e); return; }
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    // Esc solo pausa/reanuda durante la partida (no en menús ni game over)
+    if (!e.repeat && (e.code === 'KeyP' || !gameOver)) togglePause();
+    return;
+  }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -1076,6 +1121,20 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', () => init(mode));
+resumeBtn.addEventListener('click', () => { resumeBtn.blur(); togglePause(); });
+pauseRestartBtn.addEventListener('click', () => { pauseRestartBtn.blur(); init(mode); });
+controlsBtn.addEventListener('click', () => {
+  controlsBtn.blur();
+  pauseMenu.classList.add('hidden');
+  pauseControls.classList.remove('hidden');
+});
+controlsBackBtn.addEventListener('click', () => {
+  controlsBackBtn.blur();
+  pauseControls.classList.add('hidden');
+  pauseMenu.classList.remove('hidden');
+});
+levelDownBtn.addEventListener('click', () => { setStartLevel(startLevel - 1); levelDownBtn.blur(); });
+levelUpBtn.addEventListener('click', () => { setStartLevel(startLevel + 1); levelUpBtn.blur(); });
 menuBtn.addEventListener('click', showMenu);
 
 function applyTheme(theme) {
@@ -1108,6 +1167,7 @@ themeToggle.addEventListener('click', () => {
 });
 
 muted = loadMuted();
+setStartLevel(loadStartLevel());
 applyTheme(loadTheme());
 buildModeList();
 showMenu();
