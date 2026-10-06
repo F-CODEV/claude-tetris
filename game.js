@@ -108,7 +108,7 @@ const modeList = document.getElementById('mode-list');
 const overlayActions = document.getElementById('overlay-actions');
 const menuBtn = document.getElementById('menu-btn');
 const abilityList = document.getElementById('ability-list');
-const abilitiesPanel = document.getElementById('abilities-panel');
+const energySection = document.getElementById('energy-section');
 const energyBar = document.getElementById('energy-bar');
 const energyFill = document.getElementById('energy-fill');
 const holdCanvas = document.getElementById('hold-canvas');
@@ -129,7 +129,7 @@ let board, current, next, score, lines, level, paused, gameOver, lastTime, dropA
 let linesSincePower, powerPending, freezeLeft, flashCells, flashLeft;
 let combo, b2bActive, lastMoveRotate, popups = [];
 let mode = 'classic', elapsed, garbageAccum, fadeCells, lastGoalText;
-let queue = [], energy, holdType, previewLeft, slowLeft, undoSnapshot, abilityOptions;
+let queue = [], energy, holdType, holdUsed, previewLeft, slowLeft, undoSnapshot, abilityOptions;
 let audioCtx, muted = false;
 
 // ---- Desafíos ----
@@ -351,28 +351,35 @@ function doUndo() {
   queue = s.queueTypes.map(t => makePiece(t));
   current = makePiece(s.currentType);
   undoSnapshot = null;
+  holdUsed = false; // la pieza fijada vuelve como pieza nueva
   lastMoveRotate = false;
   dropAccum = 0;
   afterAbility('DESHECHO', [523, 440, 349]);
   return true;
 }
 
-function doHold() {
+// Hold (C / Shift), en todos los modos. Una vez por pieza: holdUsed lo bloquea
+// hasta que spawn() saca la siguiente. Con el slot vacío guarda la actual y toma
+// la primera de la cola; si no, intercambia con la reservada.
+function holdPiece() {
+  if (holdUsed) return;
   const fromQueue = holdType === null;
   const incoming = fromQueue ? queue[0] : makePiece(holdType);
-  if (collide(incoming.shape, incoming.x, incoming.y)) return noFit();
-  const outType = current.type;
+  if (collide(incoming.shape, incoming.x, incoming.y)) { noFit(); return; }
   if (fromQueue) {
     queue.shift();
     fillQueue();
     if (previewLeft > 0) previewLeft--;
   }
+  holdType = current.type;
   current = incoming;
-  holdType = outType;
+  holdUsed = true;
   undoSnapshot = null; // el hold cambia qué pieza es cuál: no se puede deshacer más atrás
   lastMoveRotate = false;
-  afterAbility('RESERVADA', [523, 659]);
-  return true;
+  dropAccum = 0;
+  syncNext();
+  drawPanels();
+  playTone(523, 80, 'triangle');
 }
 
 function doSwap(type) {
@@ -408,7 +415,6 @@ const ABILITIES = [
   { name: 'Intercambiar pieza', desc: 'Cambia la actual por una de 3 opciones.', run: openSwapChoices },
   { name: 'Ralentizar 10 s', desc: 'La caída va 3× más lenta.', run: doSlow },
   { name: 'Deshacer colocación', desc: 'Devuelve la última pieza fijada.', available: () => !!undoSnapshot, run: doUndo },
-  { name: 'Reservar pieza', desc: 'Guarda la actual (o la intercambia).', run: doHold },
 ];
 
 function renderOptions(options) {
@@ -438,7 +444,7 @@ function openAbilityMenu() {
   }
   paused = true;
   cancelAnimationFrame(animId);
-  showOverlay('HABILIDAD', 'Elige 1–5 · Esc cancela', { abilities: true });
+  showOverlay('HABILIDAD', `Elige 1–${ABILITIES.length} · Esc cancela`, { abilities: true });
   renderOptions(ABILITIES);
 }
 
@@ -716,6 +722,7 @@ function lockPiece() {
 
 function spawn() {
   current = queue.shift();
+  holdUsed = false; // pieza nueva: el hold vuelve a estar disponible
   fillQueue();
   // recompensas y power-ups van al frente de la cola (no reemplazan lo ya visto)
   if (rewardPending) {
@@ -879,6 +886,7 @@ function drawMini(context, type, cellX, cellY, size) {
 
 function drawHold() {
   holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
+  holdCanvas.classList.toggle('locked', holdUsed); // atenuado hasta que se asiente la pieza
   if (holdType !== null) drawMini(holdCtx, holdType, 0, 0, 20);
 }
 
@@ -1017,7 +1025,8 @@ function init(modeId = mode) {
   slowLeft = 0;
   undoSnapshot = null;
   abilityOptions = null;
-  abilitiesPanel.classList.toggle('hidden', !abilitiesOn());
+  energySection.classList.toggle('hidden', !abilitiesOn());
+  holdUsed = false;
   lastTime = performance.now();
   queue = [];
   fillQueue();
@@ -1056,6 +1065,11 @@ document.addEventListener('keydown', e => {
       break;
     case 'KeyE':
       if (!e.repeat) openAbilityMenu();
+      break;
+    case 'KeyC':
+    case 'ShiftLeft':
+    case 'ShiftRight':
+      if (!e.repeat) holdPiece();
       break;
   }
   updateHUD();

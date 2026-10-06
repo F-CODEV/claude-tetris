@@ -320,6 +320,15 @@ kbd {
   border-radius: 4px;
 }
 
+#hold-canvas {
+  transition: opacity 0.15s;
+}
+
+/* hold ya usado en este turno */
+#hold-canvas.locked {
+  opacity: 0.35;
+}
+
 .energy-bar {
   height: 14px;
   border: 1px solid var(--border);
