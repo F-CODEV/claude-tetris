@@ -42,6 +42,12 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Pieza fantasma** (_ghost piece_): muestra dónde aterrizará la pieza actual.
 - **Vista previa** de la siguiente pieza.
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
+- **Modos de juego**: al abrir la página (y con el botón **Menú**) eliges entre **Clásico** y 5 desafíos con objetivo, que usan solo las 7 piezas estándar:
+  - **Sprint 40**: limpia 40 líneas en 2 minutos.
+  - **Marea de basura**: sobrevive 2 minutos mientras sube una fila de basura cada 10 s.
+  - **Bloques fijos**: elimina todas las piedras pre-colocadas en las 8 filas inferiores.
+  - **Invisible**: las piezas se vuelven invisibles al tocar suelo; limpia 20 líneas.
+  - **Rotación inversa**: desde el nivel 3 la rotación gira al revés; llega al nivel 5.
 - **Combos y bonus**: limpiar líneas en piezas consecutivas multiplica la puntuación (x2, x3… hasta x10; se reinicia con una pieza sin líneas). **T-spin** (rotar una T en un hueco con 3 esquinas ocupadas: 400 / 800 / 1200 / 1600 × nivel), **B2B** (Tetris o T-spin seguido de otro: ×1,5) y **Perfect Clear** (dejar el tablero vacío: hasta 2000 × nivel). Con popups en pantalla, casilla `COMBO` y efectos de sonido (Web Audio).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.

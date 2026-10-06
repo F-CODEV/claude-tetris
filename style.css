@@ -229,3 +229,85 @@ kbd {
 #restart-btn:hover {
   background: var(--accent-hover);
 }
+
+/* ---- Objetivo del desafío ---- */
+.goal {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Menú de modos ---- */
+.mode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 250px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mode-btn:hover,
+.mode-btn:focus-visible {
+  border-color: var(--accent);
+  background: var(--overlay-bg);
+}
+
+.mode-btn strong {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.mode-btn span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.secondary-btn {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.secondary-btn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+#overlay-title.win {
+  color: var(--accent);
+}
+
+/* siempre al final: gana a los display de las reglas anteriores */
+.hidden {
+  display: none;
+}

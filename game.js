@@ -23,6 +23,8 @@ const COLORS = [
   '#ce93d8', // tinte - lilac
   '#a1887f', // gravedad - brown
   '#81d4fa', // congelar - ice blue
+  '#757575', // basura - gray
+  '#9e9d24', // piedra - olive
 ];
 
 const PIECES = [
@@ -44,6 +46,8 @@ const PIECES = [
   [[15]],                                      // tinte (power-up)
   [[16]],                                      // gravedad (power-up)
   [[17]],                                      // congelar (power-up)
+  [[18]],                                      // basura (nunca es pieza, solo celda del tablero)
+  [[19]],                                      // piedra (nunca es pieza, solo celda del tablero)
 ];
 
 const STANDARD_COUNT = 7;
@@ -69,6 +73,18 @@ const COMBO_MAX = 10;
 const POPUP_MS = 1200;
 const MUTE_KEY = 'tetris-muted';
 
+const GARBAGE = 18, STONE = 19;
+const SPRINT_LINES = 40;
+const SPRINT_MS = 120000;
+const GARBAGE_EVERY_MS = 10000;
+const SURVIVE_MS = 120000;
+const STONE_ROWS = 8;
+const STONE_DENSITY = 0.6;
+const INVISIBLE_LINES = 20;
+const REVERSE_FROM_LEVEL = 3;
+const REVERSE_TARGET_LEVEL = 5;
+const FADE_MS = 500;
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -77,6 +93,11 @@ const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const goalEl = document.getElementById('goal');
+const goalSection = document.getElementById('goal-section');
+const modeList = document.getElementById('mode-list');
+const overlayActions = document.getElementById('overlay-actions');
+const menuBtn = document.getElementById('menu-btn');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
@@ -88,8 +109,116 @@ let gridColor;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, rewardPending;
 let linesSincePower, powerPending, freezeLeft, flashCells, flashLeft;
-let combo, b2bActive, lastMoveRotate, popups;
+let combo, b2bActive, lastMoveRotate, popups = [];
+let mode = 'classic', elapsed, garbageAccum, fadeCells, lastGoalText;
 let audioCtx, muted = false;
+
+// ---- Desafíos ----
+const fmtTime = ms => {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+const countStones = () => board.reduce((n, row) => n + row.filter(v => v === STONE).length, 0);
+
+// check() devuelve 'win', un mensaje de derrota o null. Solo se evalúa en partida.
+const CHALLENGES = {
+  classic: {
+    name: 'Clásico',
+    desc: 'El juego de siempre, con piezas especiales, power-ups y combos.',
+    goal: () => '',
+    check: () => null,
+  },
+  sprint: {
+    name: 'Sprint 40',
+    desc: 'Limpia 40 líneas en 2 minutos.',
+    goal: () => `${Math.min(lines, SPRINT_LINES)}/${SPRINT_LINES} · ${fmtTime(SPRINT_MS - elapsed)}`,
+    check: () => lines >= SPRINT_LINES ? 'win' : (elapsed >= SPRINT_MS ? 'TIEMPO AGOTADO' : null),
+  },
+  garbage: {
+    name: 'Marea de basura',
+    desc: 'Sobrevive 2 minutos: sube una fila de basura cada 10 s.',
+    goal: () => `${fmtTime(SURVIVE_MS - elapsed)} · basura ${Math.ceil((GARBAGE_EVERY_MS - garbageAccum) / 1000)}s`,
+    check: () => elapsed >= SURVIVE_MS ? 'win' : null,
+  },
+  fixed: {
+    name: 'Bloques fijos',
+    desc: 'Elimina todas las piedras pre-colocadas completando sus filas.',
+    goal: () => `Piedras: ${countStones()}`,
+    check: () => countStones() === 0 ? 'win' : null,
+  },
+  invisible: {
+    name: 'Invisible',
+    desc: 'Las piezas se vuelven invisibles al tocar suelo. Limpia 20 líneas.',
+    goal: () => `${Math.min(lines, INVISIBLE_LINES)}/${INVISIBLE_LINES}`,
+    check: () => lines >= INVISIBLE_LINES ? 'win' : null,
+  },
+  reverse: {
+    name: 'Rotación inversa',
+    desc: 'Desde el nivel 3 la rotación gira al revés. Llega al nivel 5.',
+    goal: () => `Nivel ${level}/${REVERSE_TARGET_LEVEL} ${level >= REVERSE_FROM_LEVEL ? '↺' : '↻'}`,
+    check: () => level >= REVERSE_TARGET_LEVEL ? 'win' : null,
+  },
+};
+
+// Piezas especiales, power-ups y recompensas solo en el modo clásico.
+const extrasOn = () => mode === 'classic';
+
+function updateGoal() {
+  const text = CHALLENGES[mode].goal();
+  if (text === lastGoalText) return;
+  lastGoalText = text;
+  goalEl.textContent = text;
+}
+
+function checkGoal() {
+  if (gameOver) return;
+  const result = CHALLENGES[mode].check();
+  if (result) endGame(result);
+}
+
+function placeStones() {
+  for (let r = ROWS - STONE_ROWS; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) board[r][c] = Math.random() < STONE_DENSITY ? STONE : 0;
+    if (board[r].every(v => v)) board[r][Math.floor(Math.random() * COLS)] = 0;
+  }
+}
+
+function addGarbageRow() {
+  if (board[0].some(v => v)) { endGame('LA BASURA TE ENTERRÓ'); return; }
+  board.shift();
+  const hole = Math.floor(Math.random() * COLS);
+  board.push(Array.from({ length: COLS }, (_, c) => c === hole ? 0 : GARBAGE));
+  if (collide(current.shape, current.x, current.y)) {
+    current.y--;
+    if (collide(current.shape, current.x, current.y)) { endGame('LA BASURA TE ENTERRÓ'); return; }
+  }
+  addPopup('¡BASURA!', '#bdbdbd');
+  playTone(110, 200, 'sawtooth');
+}
+
+function fadePiece() {
+  for (let r = 0; r < current.shape.length; r++)
+    for (let c = 0; c < current.shape[r].length; c++)
+      if (current.shape[r][c])
+        fadeCells.push({ r: current.y + r, c: current.x + c, color: current.shape[r][c], life: FADE_MS });
+}
+
+function updateChallenge(dt) {
+  if (gameOver) return;
+  const cdt = Math.min(dt, 250); // una pestaña en segundo plano no debe saltar el reloj
+  elapsed += cdt;
+  if (mode === 'garbage') {
+    garbageAccum += cdt;
+    while (garbageAccum >= GARBAGE_EVERY_MS && !gameOver) {
+      garbageAccum -= GARBAGE_EVERY_MS;
+      addGarbageRow();
+    }
+  }
+  for (const f of fadeCells) f.life -= cdt;
+  fadeCells = fadeCells.filter(f => f.life > 0);
+  checkGoal();
+  updateGoal();
+}
 
 // ---- Sonido (Web Audio, sin archivos) ----
 function initAudio() {
@@ -147,6 +276,7 @@ function makePiece(type) {
 }
 
 function randomPiece() {
+  if (!extrasOn()) return makePiece(Math.floor(Math.random() * STANDARD_COUNT) + 1);
   const roll = Math.random();
   if (roll < HOLLOW_CHANCE) return makePiece(HOLLOW);
   if (roll < HOLLOW_CHANCE + PENTOMINO_CHANCE)
@@ -177,7 +307,9 @@ function rotateCW(shape) {
 }
 
 function tryRotate() {
-  const rotated = rotateCW(current.shape);
+  let rotated = rotateCW(current.shape);
+  // modo "reverse" desde cierto nivel: antihorario (tres giros horarios)
+  if (mode === 'reverse' && level >= REVERSE_FROM_LEVEL) rotated = rotateCW(rotateCW(rotated));
   const kicks = [0, -1, 1, -2, 2];
   for (const kick of kicks) {
     if (!collide(rotated, current.x + kick, current.y)) {
@@ -265,16 +397,19 @@ function clearLines(tspin = false) {
       r++;
     }
   }
-  if (cleared === 4) rewardPending = true;
+  if (cleared === 4 && extrasOn()) rewardPending = true;
   if (cleared) {
     linesSincePower += cleared;
     if (linesSincePower >= POWERUP_EVERY) {
       linesSincePower -= POWERUP_EVERY;
-      powerPending = true;
+      if (extrasOn()) powerPending = true;
     }
     scoreTurn(cleared, tspin);
     lines += cleared;
+    const prevLevel = level;
     level = Math.floor(lines / 10) + 1;
+    if (mode === 'reverse' && prevLevel < REVERSE_FROM_LEVEL && level >= REVERSE_FROM_LEVEL)
+      addPopup('¡ROTACIÓN INVERSA!', '#ef5350');
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   } else {
@@ -368,11 +503,13 @@ function applyPowerUp(type, x, y) {
 
 function lockPiece() {
   const tspin = isTSpin();
+  if (mode === 'invisible') fadePiece();
   if (POWERUPS.includes(current.type)) applyPowerUp(current.type, current.x, current.y);
   else merge();
   clearLines(tspin);
   lastMoveRotate = false;
-  spawn();
+  checkGoal();
+  if (!gameOver) spawn();
 }
 
 function spawn() {
@@ -441,17 +578,26 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
 
+  // modo invisible: el tablero y el ghost se ocultan (se revela al terminar)
+  const hidden = mode === 'invisible' && !gameOver;
+
   // board
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      drawBlock(ctx, c, r, board[r][c], BLOCK);
+  if (hidden) {
+    for (const f of fadeCells) drawBlock(ctx, f.c, f.r, f.color, BLOCK, f.life / FADE_MS);
+  } else {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        drawBlock(ctx, c, r, board[r][c], BLOCK);
+  }
 
   // ghost
-  const gy = ghostY();
-  for (let r = 0; r < current.shape.length; r++)
-    for (let c = 0; c < current.shape[r].length; c++)
-      if (current.shape[r][c])
-        drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+  if (!hidden) {
+    const gy = ghostY();
+    for (let r = 0; r < current.shape.length; r++)
+      for (let c = 0; c < current.shape[r].length; c++)
+        if (current.shape[r][c])
+          drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+  }
 
   // current piece
   for (let r = 0; r < current.shape.length; r++)
@@ -504,12 +650,46 @@ function drawNext() {
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
 }
 
-function endGame() {
+// menu: lista de modos; si no, botones Reiniciar / Menú.
+function showOverlay(title, scoreText, { menu = false, win = false } = {}) {
+  overlayTitle.textContent = title;
+  overlayTitle.classList.toggle('win', win);
+  overlayScore.textContent = scoreText;
+  modeList.classList.toggle('hidden', !menu);
+  overlayActions.classList.toggle('hidden', menu);
+  overlay.classList.remove('hidden');
+}
+
+// result: 'win', un mensaje de derrota, o nada (GAME OVER por bloqueo arriba).
+function endGame(result) {
   gameOver = true;
   cancelAnimationFrame(animId);
-  overlayTitle.textContent = 'GAME OVER';
-  overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
-  overlay.classList.remove('hidden');
+  const win = result === 'win';
+  let text = `Puntuación: ${score.toLocaleString()}`;
+  if (mode !== 'classic') text += ` · Tiempo ${fmtTime(elapsed)}`;
+  showOverlay(win ? '¡OBJETIVO CUMPLIDO!' : (result || 'GAME OVER'), text, { win });
+}
+
+function showMenu() {
+  cancelAnimationFrame(animId);
+  paused = false;
+  gameOver = true;
+  showOverlay('ELIGE MODO', '', { menu: true });
+}
+
+function buildModeList() {
+  for (const [id, ch] of Object.entries(CHALLENGES)) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'mode-btn';
+    const name = document.createElement('strong');
+    name.textContent = ch.name;
+    const desc = document.createElement('span');
+    desc.textContent = ch.desc;
+    btn.append(name, desc);
+    btn.addEventListener('click', () => init(id));
+    modeList.appendChild(btn);
+  }
 }
 
 function togglePause() {
@@ -520,9 +700,7 @@ function togglePause() {
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    showOverlay('PAUSA', '');
   }
 }
 
@@ -543,6 +721,7 @@ function loop(ts) {
       lockPiece();
     }
   }
+  updateChallenge(dt);
   draw();
   // endGame() puede ejecutarse dentro de este frame (caída por gravedad):
   // su cancelAnimationFrame no cancela el frame en curso, así que no reprogramar.
@@ -550,8 +729,15 @@ function loop(ts) {
   animId = requestAnimationFrame(loop);
 }
 
-function init() {
+function init(modeId = mode) {
+  mode = modeId;
   board = createBoard();
+  if (mode === 'fixed') placeStones();
+  elapsed = 0;
+  garbageAccum = 0;
+  fadeCells = [];
+  lastGoalText = null;
+  goalSection.classList.toggle('hidden', mode === 'classic');
   score = 0;
   lines = 0;
   level = 1;
@@ -573,6 +759,8 @@ function init() {
   next = randomPiece();
   spawn();
   updateHUD();
+  updateGoal();
+  overlayTitle.classList.remove('win');
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
@@ -605,7 +793,8 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
-restartBtn.addEventListener('click', init);
+restartBtn.addEventListener('click', () => init(mode));
+menuBtn.addEventListener('click', showMenu);
 
 function applyTheme(theme) {
   const isLight = theme === 'light';
@@ -638,4 +827,5 @@ themeToggle.addEventListener('click', () => {
 
 muted = loadMuted();
 applyTheme(loadTheme());
-init();
+buildModeList();
+showMenu();
