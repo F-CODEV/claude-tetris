@@ -15,7 +15,7 @@ Tetris in vanilla JavaScript + HTML5 Canvas. No dependencies, no build step, no 
 
 Three files, loaded by `index.html` via a plain `<script src="game.js">` (no modules):
 
-- `index.html`: fixed DOM IDs that `game.js` looks up at load (`board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`). Renaming any of them breaks the game.
+- `index.html`: fixed DOM IDs that `game.js` looks up at load (`board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`, `theme-toggle`). Renaming any of them breaks the game.
 - `style.css`: layout and theme only.
 - `game.js`: all logic, module-level mutable globals (`board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropInterval`, ...), reset by `init()`.
 
@@ -29,4 +29,5 @@ Game flow in `game.js`:
 - Board cells and piece shapes store a color index (1–7) that maps to `COLORS` and `PIECES`. 0 means empty. Keep the three arrays aligned when adding pieces (and update `randomPiece()`, which hardcodes 7).
 - `collide(shape, ox, oy)` is the single collision check (walls, floor, board). Rows with `ny < 0` are allowed. Rotation (`tryRotate()`) is clockwise only, with horizontal kicks `[0,-1,1,-2,2]` and no vertical kick.
 - Pause: `togglePause()` cancels the animation frame and reuses the game-over overlay. Resuming resets `lastTime` to avoid a large `dt`.
+- Theme: dark by default; colors are CSS variables in `style.css` (`:root` dark, `[data-theme="light"]`). `applyTheme()` sets `data-theme`, caches the `--grid` color in `gridColor` (used by `drawGrid()`), and redraws `draw()`/`drawNext()` since paused/game-over states have no loop. The choice persists in `localStorage` key `tetris-theme`.
 - Input is one `keydown` listener: arrows, `X` (rotate), `Space` (hard drop), `P` (pause).
