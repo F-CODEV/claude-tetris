@@ -106,6 +106,8 @@ Después abre `http://localhost:8000` en el navegador.
 
 El botón circular de la esquina superior derecha alterna entre tema **oscuro** (por defecto) y **claro**. La elección se guarda en `localStorage` y se recuerda entre sesiones.
 
+**Records:** el top 5 de puntuaciones (con nombre, modo y fecha), el mejor combo y el máximo de líneas se guardan en `localStorage` (clave `tetris-records`). Se muestran en el menú de inicio y al terminar la partida; si tu puntuación entra en el top, escribe tu nombre (máx. 12 caracteres, Enter o «Guardar») y su fila se resalta. El botón «Borrar records» los reinicia tras confirmar.
+
 ---
 
 ## Cómo funciona

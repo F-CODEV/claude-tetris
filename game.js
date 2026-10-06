@@ -72,6 +72,10 @@ const B2B_MULT = 1.5;
 const COMBO_MAX = 10;
 const POPUP_MS = 1200;
 const MUTE_KEY = 'tetris-muted';
+const RECORDS_KEY = 'tetris-records';
+const RECORDS_MAX = 5;         // tamaño del top
+const NAME_MAX = 12;           // longitud máxima del nombre
+const DEFAULT_NAME = 'ANÓNIMO';
 
 const GARBAGE = 18, STONE = 19;
 const SPRINT_LINES = 40;
@@ -120,6 +124,13 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const recordsSection = document.getElementById('records-section');
+const recordsList = document.getElementById('records-list');
+const recordsStats = document.getElementById('records-stats');
+const nameEntry = document.getElementById('name-entry');
+const nameInput = document.getElementById('name-input');
+const nameSaveBtn = document.getElementById('name-save-btn');
+const resetRecordsBtn = document.getElementById('reset-records-btn');
 const themeToggle = document.getElementById('theme-toggle');
 
 const THEME_KEY = 'tetris-theme';
@@ -127,10 +138,11 @@ let gridColor;
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, rewardPending;
 let linesSincePower, powerPending, freezeLeft, flashCells, flashLeft;
-let combo, b2bActive, lastMoveRotate, popups = [];
+let combo, maxCombo, b2bActive, lastMoveRotate, popups = [];
 let mode = 'classic', elapsed, garbageAccum, fadeCells, lastGoalText;
 let queue = [], energy, holdType, holdUsed, previewLeft, slowLeft, undoSnapshot, abilityOptions;
 let audioCtx, muted = false;
+let records = { scores: [], maxCombo: 0, maxLines: 0 }, pendingRecord = null;
 
 // ---- Desafíos ----
 const fmtTime = ms => {
@@ -564,6 +576,7 @@ function scoreTurn(cleared, tspin) {
   }
 
   combo++;
+  if (combo > maxCombo) maxCombo = combo;
   const mult = Math.min(combo, COMBO_MAX);
   const hard = cleared === 4 || tspin;
   const b2b = hard && b2bActive;
@@ -904,14 +917,133 @@ function drawPanels() {
   drawPreview();
 }
 
+// ---- Records ----
+// Valida lo leído de localStorage: ignora entradas corruptas y recorta a RECORDS_MAX.
+function sanitizeRecords(raw) {
+  const out = { scores: [], maxCombo: 0, maxLines: 0 };
+  if (!raw || typeof raw !== 'object') return out;
+  const num = v => (Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+  out.maxCombo = num(raw.maxCombo);
+  out.maxLines = num(raw.maxLines);
+  if (Array.isArray(raw.scores)) {
+    for (const e of raw.scores) {
+      if (!e || typeof e !== 'object' || !Number.isFinite(e.score) || e.score <= 0) continue;
+      out.scores.push({
+        name: (typeof e.name === 'string' ? e.name.trim().slice(0, NAME_MAX) : '') || DEFAULT_NAME,
+        score: num(e.score),
+        lines: num(e.lines),
+        combo: num(e.combo),
+        mode: typeof e.mode === 'string' ? e.mode : 'classic',
+        date: typeof e.date === 'string' ? e.date.slice(0, 40) : ''
+      });
+    }
+  }
+  out.scores.sort((a, b) => b.score - a.score);
+  out.scores.length = Math.min(out.scores.length, RECORDS_MAX);
+  return out;
+}
+
+function loadRecords() {
+  try { return sanitizeRecords(JSON.parse(localStorage.getItem(RECORDS_KEY))); } catch (e) { return sanitizeRecords(null); }
+}
+
+function saveRecords() {
+  try { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); } catch (e) { /* almacenamiento no disponible */ }
+}
+
+// ¿Entra `pts` en el top? (empates con el último puesto no desplazan)
+function qualifiesForTop(pts) {
+  if (pts <= 0) return false;
+  return records.scores.length < RECORDS_MAX || pts > records.scores[records.scores.length - 1].score;
+}
+
+// Al terminar la partida: actualiza máximos históricos y prepara la entrada pendiente de nombre.
+function registerRecord() {
+  records.maxCombo = Math.max(records.maxCombo, maxCombo);
+  records.maxLines = Math.max(records.maxLines, lines);
+  saveRecords();
+  pendingRecord = null;
+  if (qualifiesForTop(score)) {
+    pendingRecord = { name: '', score, lines, combo: maxCombo, mode, date: new Date().toISOString() };
+  }
+  nameEntry.classList.toggle('hidden', !pendingRecord);
+  nameInput.value = '';
+}
+
+// Guarda la entrada pendiente con el nombre dado (o el de por defecto) y re-renderiza.
+function commitPending(name = nameInput.value) {
+  if (!pendingRecord) return;
+  pendingRecord.name = name.trim().slice(0, NAME_MAX) || DEFAULT_NAME;
+  const entry = pendingRecord;
+  pendingRecord = null;
+  records.scores.push(entry);
+  records.scores.sort((a, b) => b.score - a.score);
+  records.scores.length = Math.min(records.scores.length, RECORDS_MAX);
+  saveRecords();
+  nameEntry.classList.add('hidden');
+  renderRecords(entry);
+}
+
+function resetRecords() {
+  records = sanitizeRecords(null);
+  pendingRecord = null;
+  nameEntry.classList.add('hidden');
+  saveRecords();
+  renderRecords();
+}
+
+function modeLabel(id) {
+  return id === 'classic' ? 'Clásico' : (CHALLENGES[id] ? CHALLENGES[id].name : id);
+}
+
+// Pinta la tabla con textContent (nunca innerHTML). `highlight` es la entrada recién guardada;
+// si hay una entrada pendiente de nombre se muestra resaltada en su puesto.
+function renderRecords(highlight = null) {
+  const rows = records.scores.slice();
+  if (pendingRecord) {
+    highlight = pendingRecord;
+    rows.push(pendingRecord);
+    rows.sort((a, b) => b.score - a.score);
+    rows.length = Math.min(rows.length, RECORDS_MAX);
+  }
+  recordsList.replaceChildren();
+  if (!rows.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'Sin records todavía';
+    recordsList.appendChild(li);
+  }
+  rows.forEach((e, i) => {
+    const li = document.createElement('li');
+    if (e === highlight) li.classList.add('new');
+    li.title = `${modeLabel(e.mode)} · ${e.lines} líneas · combo x${e.combo}`;
+    const rank = document.createElement('span');
+    rank.className = 'rec-rank';
+    rank.textContent = `${i + 1}.`;
+    const name = document.createElement('span');
+    name.className = 'rec-name';
+    name.textContent = e.name || '…';
+    const pts = document.createElement('span');
+    pts.className = 'rec-score';
+    pts.textContent = e.score.toLocaleString();
+    li.append(rank, name, pts);
+    recordsList.appendChild(li);
+  });
+  recordsStats.textContent = `Mejor combo x${records.maxCombo} · Máx. líneas ${records.maxLines}`;
+  resetRecordsBtn.classList.toggle('hidden', !records.scores.length && !records.maxCombo && !records.maxLines);
+}
+
 // menu: lista de modos; abilities: opciones de habilidad; si no, Reiniciar / Menú.
-function showOverlay(title, scoreText, { menu = false, win = false, abilities = false } = {}) {
+// records: muestra la tabla de records (menú y fin de partida).
+function showOverlay(title, scoreText, { menu = false, win = false, abilities = false, records: showRecords = false } = {}) {
   overlayTitle.textContent = title;
   overlayTitle.classList.toggle('win', win);
   overlayScore.textContent = scoreText;
   modeList.classList.toggle('hidden', !menu);
   abilityList.classList.toggle('hidden', !abilities);
   overlayActions.classList.toggle('hidden', menu || abilities);
+  recordsSection.classList.toggle('hidden', !showRecords);
+  if (showRecords) renderRecords();
   overlay.classList.remove('hidden');
 }
 
@@ -922,7 +1054,10 @@ function endGame(result) {
   const win = result === 'win';
   let text = `Puntuación: ${score.toLocaleString()}`;
   if (mode !== 'classic') text += ` · Tiempo ${fmtTime(elapsed)}`;
-  showOverlay(win ? '¡OBJETIVO CUMPLIDO!' : (result || 'GAME OVER'), text, { win });
+  registerRecord();
+  showOverlay(win ? '¡OBJETIVO CUMPLIDO!' : (result || 'GAME OVER'), text, { win, records: true });
+  // foco con retardo: evita que teclas aún pulsadas (Espacio, flechas) acaben en el input
+  if (pendingRecord) setTimeout(() => { if (pendingRecord) nameInput.focus(); }, 600);
 }
 
 function showMenu() {
@@ -930,7 +1065,8 @@ function showMenu() {
   abilityOptions = null;
   paused = false;
   gameOver = true;
-  showOverlay('ELIGE MODO', '', { menu: true });
+  commitPending();
+  showOverlay('ELIGE MODO', '', { menu: true, records: true });
 }
 
 function buildModeList() {
@@ -994,6 +1130,7 @@ function loop(ts) {
 }
 
 function init(modeId = mode) {
+  commitPending();
   mode = modeId;
   board = createBoard();
   if (mode === 'fixed') placeStones();
@@ -1016,6 +1153,7 @@ function init(modeId = mode) {
   flashCells = [];
   flashLeft = 0;
   combo = 0;
+  maxCombo = 0;
   b2bActive = false;
   lastMoveRotate = false;
   popups = [];
@@ -1040,6 +1178,8 @@ function init(modeId = mode) {
 }
 
 document.addEventListener('keydown', e => {
+  // escribiendo el nombre del record: el juego no intercepta ninguna tecla
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
   initAudio(); // el navegador exige un gesto del usuario para crear el AudioContext
   if (e.code === 'KeyM') { toggleMute(); return; }
   if (abilityOptions) { handleAbilityKey(e); return; }
@@ -1076,6 +1216,14 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', () => init(mode));
+nameSaveBtn.addEventListener('click', () => { commitPending(nameInput.value); nameSaveBtn.blur(); });
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); commitPending(nameInput.value); nameInput.blur(); }
+});
+resetRecordsBtn.addEventListener('click', () => {
+  if (confirm('¿Borrar todos los records?')) resetRecords();
+  resetRecordsBtn.blur();
+});
 menuBtn.addEventListener('click', showMenu);
 
 function applyTheme(theme) {
@@ -1108,6 +1256,7 @@ themeToggle.addEventListener('click', () => {
 });
 
 muted = loadMuted();
+records = loadRecords();
 applyTheme(loadTheme());
 buildModeList();
 showMenu();
