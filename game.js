@@ -257,6 +257,9 @@ function loop(ts) {
     }
   }
   draw();
+  // endGame() puede ejecutarse dentro de este frame (caída por gravedad):
+  // su cancelAnimationFrame no cancela el frame en curso, así que no reprogramar.
+  if (gameOver) return;
   animId = requestAnimationFrame(loop);
 }
 
